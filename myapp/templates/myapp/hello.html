@@ -1,0 +1,193 @@
+
+{% extends 'myapp/base.html' %}
+
+{% block title %}Inicio | Gestión de proyectos{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <!-- Presentación principal -->
+    <div class="p-5 mb-4 bg-white rounded-4 shadow-sm text-center">
+
+        <h1 class="display-5 fw-bold">
+            Sistema de Gestión de Proyectos y Tareas
+        </h1>
+
+        <p class="fs-5 text-muted mt-3">
+            Organiza tus proyectos, registra actividades y administra
+            tus tareas de manera sencilla y eficiente.
+        </p>
+
+        <div class="mt-4">
+            <a href="{% url 'projects' %}" class="btn btn-primary btn-lg me-2">
+                Ver proyectos
+            </a>
+
+            <a href="{% url 'tasks' %}" class="btn btn-success btn-lg">
+                Ver tareas
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Tarjetas de gestión -->
+    <div class="row g-4">
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 text-center p-4 h-100">
+                <h3>Gestión de proyectos</h3>
+                <p class="text-muted">
+                    Crea y consulta tus proyectos registrados.
+                </p>
+                <a href="{% url 'create_project' %}" class="btn btn-outline-primary">
+                    Crear proyecto
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 text-center p-4 h-100">
+                <h3>Gestión de tareas</h3>
+                <p class="text-muted">
+                    Registra, edita y organiza tus tareas.
+                </p>
+                <a href="{% url 'create_task' %}" class="btn btn-outline-success">
+                    Crear tarea
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Estadísticas de tareas -->
+    <div class="card shadow-sm border-0 mt-4 p-4">
+        <h3 class="text-center mb-4">Estadísticas de tareas</h3>
+        <div id="graficoTareas" style="width: 100%; height: 400px;"></div>
+    </div>
+
+    <!-- Estadísticas generales -->
+    <div class="card shadow-sm border-0 mt-4 p-4">
+        <h3 class="text-center mb-4">Proyectos y tareas registradas</h3>
+        <div id="graficoGeneral" style="width: 100%; height: 400px;"></div>
+    </div>
+
+</div>
+
+<!-- Datos enviados desde Django -->
+{{ tareas_terminadas|json_script:"tareas-terminadas" }}
+{{ tareas_pendientes|json_script:"tareas-pendientes" }}
+{{ total_proyectos|json_script:"total-proyectos" }}
+{{ total_tareas|json_script:"total-tareas" }}
+
+<!-- Librería Apache ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+
+<script>
+
+    // Obtener datos de Django
+    const tareasTerminadas = JSON.parse(
+        document.getElementById('tareas-terminadas').textContent
+    );
+
+    const tareasPendientes = JSON.parse(
+        document.getElementById('tareas-pendientes').textContent
+    );
+
+    const totalProyectos = JSON.parse(
+        document.getElementById('total-proyectos').textContent
+    );
+
+    const totalTareas = JSON.parse(
+        document.getElementById('total-tareas').textContent
+    );
+
+
+    // PRIMER GRÁFICO: Estado de las tareas
+
+    var grafico = echarts.init(
+        document.getElementById('graficoTareas')
+    );
+
+    var opciones = {
+        title: {
+            text: 'Estado de las tareas',
+            left: 'center'
+        },
+
+        tooltip: {
+            trigger: 'item'
+        },
+
+        legend: {
+            bottom: '0'
+        },
+
+        series: [{
+            name: 'Tareas',
+            type: 'pie',
+            radius: '60%',
+
+            data: [
+                {
+                    value: tareasTerminadas,
+                    name: 'Terminadas'
+                },
+                {
+                    value: tareasPendientes,
+                    name: 'Pendientes'
+                }
+            ]
+        }]
+    };
+
+    grafico.setOption(opciones);
+
+
+    // SEGUNDO GRÁFICO: Proyectos y tareas
+
+    var graficoGeneral = echarts.init(
+        document.getElementById('graficoGeneral')
+    );
+
+    var opcionesGeneral = {
+        title: {
+            text: 'Cantidad registrada',
+            left: 'center'
+        },
+
+        tooltip: {
+            trigger: 'axis'
+        },
+
+        xAxis: {
+            type: 'category',
+            data: ['Proyectos', 'Tareas']
+        },
+
+        yAxis: {
+            type: 'value',
+            minInterval: 1
+        },
+
+        series: [{
+            name: 'Cantidad',
+            type: 'bar',
+            data: [totalProyectos, totalTareas],
+            barWidth: '40%'
+        }]
+    };
+
+    graficoGeneral.setOption(opcionesGeneral);
+
+
+    // Adaptar gráficos al tamaño de pantalla
+
+    window.addEventListener('resize', function () {
+        grafico.resize();
+        graficoGeneral.resize();
+    });
+
+</script>
+
+{% endblock %}
